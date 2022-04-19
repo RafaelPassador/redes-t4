@@ -43,7 +43,7 @@ class Enlace:
     def __init__(self, linha_serial):
         self.linha_serial = linha_serial
         self.linha_serial.registrar_recebedor(self.__raw_recv)
-        self.cur_packet = []
+        self.current_packet = []
     def registrar_recebedor(self, callback):
         self.callback = callback
 
@@ -57,22 +57,6 @@ class Enlace:
         self.linha_serial.enviar(datagrama)
 
     def __raw_recv(self, dados):
-
-        dados = bytearray(dados)
-        for byte in dados:
-            if byte == 192:
-                if len(self.cur_packet) != 0:
-                    envio = bytes(self.cur_packet)
-                    envio = envio.replace(b'\xDB\xDD',b'\xDB')
-                    envio = envio.replace(b'\xDB\xDC',b'\xC0')
-                    self.cur_packet = []
-                    try:
-                        self.callback(envio)
-                    except:
-                        import traceback
-                        traceback.print_exc
-            else:
-                self.cur_packet.append(byte)
         # TODO: Preencha aqui com o código para receber dados da linha serial.
         # Trate corretamente as sequências de escape. Quando ler um quadro
         # completo, repasse o datagrama contido nesse quadro para a camada
@@ -80,4 +64,21 @@ class Enlace:
         # vir quebrado de várias formas diferentes - por exemplo, podem vir
         # apenas pedaços de um quadro, ou um pedaço de quadro seguido de um
         # pedaço de outro, ou vários quadros de uma vez só.
+
+        dados = bytearray(dados)
+        for byte in dados:
+            if byte == 192:
+                if len(self.current_packet) != 0:
+                    send = bytes(self.current_packet)
+                    send = send.replace(b'\xDB\xDD',b'\xDB')
+                    send = send.replace(b'\xDB\xDC',b'\xC0')
+                    self.current_packet = []
+                    try:
+                        self.callback(send)
+                    except:
+                        import traceback
+                        traceback.print_exc
+            else:
+                self.current_packet.append(byte)
+
         pass
